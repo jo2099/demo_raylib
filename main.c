@@ -28,8 +28,7 @@ int mapStartY = (SCREEN_HEIGHT - (SCREEN_HEIGHT / MAP_ROWS * MAP_ROWS)) / 2;
 typedef struct player
 {
     int vidas;
-    int pos_x_matriz;
-    int pos_y_matriz;
+    Vector2 pos_matriz_player;
     Vector2 pos_tela_player;
     Texture2D player_texture;
     Rectangle player_source;
@@ -68,19 +67,16 @@ void init_enemies(INIMIGO enemies[MAX_ENEMIES])//inicializa os inimigos
     for(int i=0; i<MAX_ENEMIES; i++)
     {
         enemies[i].enemy_texture=LoadTexture("sprites/isaac.png");
-        enemies[i].enemy_source=(Rectangle)
-        {
-            0,0,enemies[i].enemy_texture.width,enemies[i].enemy_texture.height
-        };
+        enemies[i].enemy_source=(Rectangle){0,0,enemies[i].enemy_texture.width,enemies[i].enemy_texture.height};
         enemies[i].vivo=0;
         enemies[i].can_fire=0;
     }
 }
 
-int funcao_movimento(char mapa[MAP_ROWS][MAP_COLS],int posx_matriz,int posy_matriz,char tecla)
-{
-    int posx=posx_matriz;
-    int posy=posy_matriz;
+int funcao_movimento(char mapa[MAP_ROWS][MAP_COLS],Vector2 pos_matriz,char tecla)
+{  
+    int posx=(int)pos_matriz.x;
+    int posy=(int)pos_matriz.y;
     switch(tecla)
     {
     case 'w':
@@ -94,7 +90,7 @@ int funcao_movimento(char mapa[MAP_ROWS][MAP_COLS],int posx_matriz,int posy_matr
         }
         break;
     case 's':
-        if(mapa[posx+3][posy]==CHAR_ESPACO_LIVRE && mapa[posx+3][posy+1] == CHAR_ESPACO_LIVRE && mapa[posx+3][posy+2] == CHAR_ESPACO_LIVRE)
+        if(mapa[posx+3][posy]==CHAR_ESPACO_LIVRE && mapa[posx+3][posy+1] == CHAR_ESPACO_LIVRE && mapa[posx+3][posy+2] == CHAR_ESPACO_LIVRE )
         {
             return 1;
         }
@@ -104,7 +100,7 @@ int funcao_movimento(char mapa[MAP_ROWS][MAP_COLS],int posx_matriz,int posy_matr
         }
         break;
     case 'a':
-        if(mapa[posx][posy-1]==CHAR_ESPACO_LIVRE && mapa[posx+1][posy-1] == CHAR_ESPACO_LIVRE && mapa[posx+2][posy-1] == CHAR_ESPACO_LIVRE)
+        if(mapa[posx][posy-1]==CHAR_ESPACO_LIVRE && mapa[posx+1][posy-1] == CHAR_ESPACO_LIVRE && mapa[posx+2][posy-1] == CHAR_ESPACO_LIVRE && mapa[posx][posy-3] != CHAR_JOGADOR && mapa[posx+1][posy-3] != CHAR_JOGADOR && mapa[posx+2][posy-3] != CHAR_JOGADOR)
         {
 
             return 1;
@@ -147,7 +143,7 @@ void movimenta_inimigos(char matriz[30][60], INIMIGO enemies[MAX_ENEMIES]) // mo
             switch(movimentox)
             {
             case 1:
-                if(funcao_movimento(matriz,enemies[i].pos_matriz.x,enemies[i].pos_matriz.y,'d'))
+                if(funcao_movimento(matriz,enemies[i].pos_matriz,'d'))
                 {
                     matriz[(int)enemies[i].pos_matriz.x][(int)enemies[i].pos_matriz.y]=CHAR_ESPACO_LIVRE;
                     enemies[i].pos_matriz.y+=1;
@@ -155,7 +151,7 @@ void movimenta_inimigos(char matriz[30][60], INIMIGO enemies[MAX_ENEMIES]) // mo
                 }
                 break;
             case -1:
-                if(funcao_movimento(matriz,enemies[i].pos_matriz.x,enemies[i].pos_matriz.y,'a'))
+                if(funcao_movimento(matriz,enemies[i].pos_matriz,'a'))
                 {
                     matriz[(int)enemies[i].pos_matriz.x][(int)enemies[i].pos_matriz.y]=CHAR_ESPACO_LIVRE;
                     enemies[i].pos_matriz.y-=1;
@@ -168,7 +164,7 @@ void movimenta_inimigos(char matriz[30][60], INIMIGO enemies[MAX_ENEMIES]) // mo
             switch(movimentoy)
             {
             case 1:
-                if(funcao_movimento(matriz,enemies[i].pos_matriz.x,enemies[i].pos_matriz.y,'s'))
+                if(funcao_movimento(matriz,enemies[i].pos_matriz,'s'))
                 {
                     matriz[(int)enemies[i].pos_matriz.x][(int)enemies[i].pos_matriz.y]=CHAR_ESPACO_LIVRE;
                     enemies[i].pos_matriz.x+=1;
@@ -176,7 +172,7 @@ void movimenta_inimigos(char matriz[30][60], INIMIGO enemies[MAX_ENEMIES]) // mo
                 }
                 break;
             case -1:
-                if(funcao_movimento(matriz,enemies[i].pos_matriz.x,enemies[i].pos_matriz.y,'w'))
+                if(funcao_movimento(matriz,enemies[i].pos_matriz,'w'))
                 {
                     matriz[(int)enemies[i].pos_matriz.x][(int)enemies[i].pos_matriz.y]=CHAR_ESPACO_LIVRE;
                     enemies[i].pos_matriz.x-=1;
@@ -192,7 +188,7 @@ void movimenta_inimigos(char matriz[30][60], INIMIGO enemies[MAX_ENEMIES]) // mo
 
 }
 
-int importa_mapa(char fileName[], char matriz[MAP_ROWS][MAP_COLS], JOGADOR *jogador, INIMIGO inimigos[])  // Importa o mapa do arquivo para a matriz
+int importa_mapa(char fileName[], char matriz[MAP_ROWS][MAP_COLS], JOGADOR *jogador, INIMIGO inimigos[MAX_ENEMIES])  // Importa o mapa do arquivo para a matriz
 {
 
     int error_code;
@@ -216,8 +212,8 @@ int importa_mapa(char fileName[], char matriz[MAP_ROWS][MAP_COLS], JOGADOR *joga
                     switch (linha[j])  // Verifica o caractere lido
                     {
                     case CHAR_JOGADOR: // Se for o jogador, adiciona ele na struct
-                        jogador->pos_x_matriz = i;
-                        jogador->pos_y_matriz = j;
+                        jogador->pos_matriz_player.x = i;
+                        jogador->pos_matriz_player.y = j;
                         break;
                     case CHAR_INIMIGO: // Se for um inimigo, adiciona ele ao vetor de inimigos
                         inimigos[num_inimigos].vivo = 1;
@@ -225,6 +221,10 @@ int importa_mapa(char fileName[], char matriz[MAP_ROWS][MAP_COLS], JOGADOR *joga
                         inimigos[num_inimigos].pos_matriz.x = i;
                         inimigos[num_inimigos].pos_matriz.y = j;
                         num_inimigos++;
+
+                        // inimigos[num_inimigos_vivos(inimigos)].vivo=1;
+
+
                         break;
                     default:
                         break;
@@ -305,9 +305,9 @@ void desenha_mapa(char mapa[MAP_ROWS][MAP_COLS])
 
 void init_player(JOGADOR *player)
 {
-    player->pos_x_matriz=0;
+    player->pos_matriz_player.x=0;
     player->vidas=3;
-    player->pos_y_matriz=0;
+    player->pos_matriz_player.y=0;
     player->player_texture=LoadTexture("sprites/isaac.png");
     player->player_source=(Rectangle)
     {
@@ -317,7 +317,7 @@ void init_player(JOGADOR *player)
 
 void desenha_jogador(JOGADOR *player)
 {
-    player->pos_tela_player=calcula_posTela(player->pos_x_matriz,player->pos_y_matriz);
+    player->pos_tela_player=calcula_posTela((int)player->pos_matriz_player.x,(int)player->pos_matriz_player.y);
     // printf("x tela: %d y tela: %d\n",(int)player->pos_tela_player.x,(int)player->pos_tela_player.y);
     // printf("x matriz: %d y matriz: %d\n",player->pos_x_matriz,player->pos_y_matriz);
     // system("pause");
@@ -328,42 +328,54 @@ void movimenta_jogador(char map[MAP_ROWS][MAP_COLS],JOGADOR* player)
 {
     if(IsKeyDown(KEY_A))
     {
-        if(funcao_movimento(map, player->pos_x_matriz, player->pos_y_matriz,(char)'a'))
+        if(funcao_movimento(map,player->pos_matriz_player,(char)'a'))
         {
-            map[player->pos_x_matriz][player->pos_y_matriz] = CHAR_ESPACO_LIVRE;
-            player->pos_y_matriz -= 1;
-            map[player->pos_x_matriz][player->pos_y_matriz] = CHAR_JOGADOR;
+            map[(int)player->pos_matriz_player.x][(int)player->pos_matriz_player.y] = CHAR_ESPACO_LIVRE;
+            player->pos_matriz_player.y -= 1;
+            map[(int)player->pos_matriz_player.x][(int)player->pos_matriz_player.y] = CHAR_JOGADOR;
         }
     }
     if(IsKeyDown(KEY_D))
     {
-        if(funcao_movimento(map, player->pos_x_matriz, player->pos_y_matriz, 'd'))
+        if(funcao_movimento(map, player->pos_matriz_player, 'd'))
         {
-            map[player->pos_x_matriz][player->pos_y_matriz] = CHAR_ESPACO_LIVRE;
-            player->pos_y_matriz += 1;
-            map[player->pos_x_matriz][player->pos_y_matriz] = CHAR_JOGADOR;
+            map[(int)player->pos_matriz_player.x][(int)player->pos_matriz_player.y] = CHAR_ESPACO_LIVRE;
+            player->pos_matriz_player.y += 1;
+            map[(int)player->pos_matriz_player.x][(int)player->pos_matriz_player.y] = CHAR_JOGADOR;
         }
     }
     if(IsKeyDown(KEY_W))
     {
-        if(funcao_movimento(map, player->pos_x_matriz, player->pos_y_matriz, 'w'))
+        if(funcao_movimento(map, player->pos_matriz_player, 'w'))
         {
-            map[player->pos_x_matriz][player->pos_y_matriz] = CHAR_ESPACO_LIVRE;
-            player->pos_x_matriz -= 1;
-            map[player->pos_x_matriz][player->pos_y_matriz] = CHAR_JOGADOR;
+            map[(int)player->pos_matriz_player.x][(int)player->pos_matriz_player.y] = CHAR_ESPACO_LIVRE;
+            player->pos_matriz_player.x -= 1;
+            map[(int)player->pos_matriz_player.x][(int)player->pos_matriz_player.y] = CHAR_JOGADOR;
         }
     }
     if(IsKeyDown(KEY_S))
     {
-        if(funcao_movimento(map, player->pos_x_matriz, player->pos_y_matriz, 's'))
+        if(funcao_movimento(map, player->pos_matriz_player, 's'))
         {
-            map[player->pos_x_matriz][player->pos_y_matriz] = CHAR_ESPACO_LIVRE;
-            player->pos_x_matriz += 1;
-            map[player->pos_x_matriz][player->pos_y_matriz] = CHAR_JOGADOR;
+            map[(int)player->pos_matriz_player.x][(int)player->pos_matriz_player.y] = CHAR_ESPACO_LIVRE;
+            player->pos_matriz_player.x += 1;
+            map[(int)player->pos_matriz_player.x][(int)player->pos_matriz_player.y] = CHAR_JOGADOR;
         }
     }
 }
 
+int num_inimigos_vivos(INIMIGO inimigos[MAX_ENEMIES])
+{
+    int contador=0;
+    for(int i=0; i<MAX_ENEMIES; i++)
+    {
+        if(inimigos[i].vivo)
+        {
+            contador++;
+        }
+    }
+    return contador;
+}
 
 int main(void)
 {
@@ -387,6 +399,13 @@ int main(void)
     // printa_inimigos(inimigos);
     // print_matriz(map,MAP_ROWS);
 
+    // printf("%d",num_inimigos_vivos(inimigos));
+    printf("%d %d\n",(int)inimigos[0].pos_matriz.x,(int)inimigos[0].pos_matriz.y);
+    // printf("%d %d\n",(int)inimigos[1].pos_matriz.x,(int)inimigos[1].pos_matriz.y);
+    // printf("%d\n",inimigos[0].vivo);
+    // printf("%c\n",map[(int)inimigos[0].pos_matriz.x][(int)inimigos[0].pos_matriz.y]);
+
+
 
     // Main game loop
     while (!WindowShouldClose())
@@ -394,7 +413,9 @@ int main(void)
 
         // Update
         movimenta_jogador(map, &player);
-        movimenta_inimigos(map, inimigos);
+        // movimenta_inimigos(map, inimigos);
+        printf("%d",funcao_movimento(map,inimigos[0].pos_matriz,'s'));
+        // system("cls");
 
 
         // Draw

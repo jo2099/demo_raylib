@@ -14,6 +14,7 @@
 #define CHAR_JOGADOR 'P'
 #define CHAR_INIMIGO 'I'
 #define BORDA_HUD 130
+#define MAX_TIROS 50
 
 
 
@@ -24,10 +25,22 @@ int num_inimigos = 0;
 int mapStartX = (SCREEN_WIDTH - (SCREEN_WIDTH / MAP_COLS * MAP_COLS)) / 2;
 int mapStartY = (SCREEN_HEIGHT - (SCREEN_HEIGHT / MAP_ROWS * MAP_ROWS)) / 2;
 
+typedef struct shoot{
+    Vector2 pos;
+    int dano;
+    int direcao;
+    int valido;
+} TIRO;
+
 
 typedef struct player
 {
     int vidas;
+
+    TIRO tiros[MAX_TIROS];
+    int num_tiros;
+
+
     Vector2 pos_matriz_player;
     Vector2 pos_tela_player;
     Texture2D player_texture;
@@ -72,8 +85,6 @@ void init_enemies(INIMIGO enemies[MAX_ENEMIES])//inicializa os inimigos
         enemies[i].can_fire=0;
     }
 }
-
-
 
 int funcao_movimento(char mapa[MAP_ROWS][MAP_COLS],Vector2 pos_matriz,char tecla)
 {
@@ -299,7 +310,13 @@ Vector2 calcula_posTela(int pos_x_matriz,int pos_y_matriz) //recebe dois inteiro
     pos_tela.y=pos_x_matriz*((SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS);
     return pos_tela;
 }
-
+Vector2 calcula_posMatriz(Vector2 pos_tela)
+{
+    Vector2 pos_matriz;
+    pos_matriz.x=pos_tela.y/((SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS);
+    pos_matriz.y=pos_tela.x/(SCREEN_WIDTH/MAP_COLS);
+    return pos_matriz;
+}
 
 void desenha_inimigos(INIMIGO inimigos[MAX_ENEMIES])
 {
@@ -311,6 +328,48 @@ void desenha_inimigos(INIMIGO inimigos[MAX_ENEMIES])
             //DrawRectangle(inimigos[i].pos_tela.x,inimigos[i].pos_tela.y,SCREEN_WIDTH/MAP_COLS,(SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS,RED);
             DrawTextureRec(inimigos[i].enemy_texture,inimigos[i].enemy_source, inimigos[i].pos_tela, WHITE);
         }
+    }
+}
+
+void desenha_tiro(JOGADOR *player,char mapa[MAP_ROWS][MAP_COLS]){
+    if(player->num_tiros > 0){
+        Vector2 size = {20, 20};
+        for(int i = 0; i < player->num_tiros; i++){
+            if(player->tiros[i].valido == 1){
+                DrawRectangleV(player->tiros[i].pos, size, BLUE);
+                Vector2 posMatriz = calcula_posMatriz(player->tiros[i].pos);
+
+                switch (player->tiros[i].direcao){
+                case KEY_UP:
+                    if(mapa[(int)posMatriz.x][(int)posMatriz.y - 2] == CHAR_PAREDE)
+                        player->tiros[i].valido = 0;
+                    else
+                        player->tiros[i].pos.y -= 20;
+                    break;
+                case KEY_DOWN:
+                    if(mapa[(int)posMatriz.x][(int)posMatriz.y + 2] == CHAR_PAREDE)
+                        player->tiros[i].valido = 0;
+                    else
+                        player->tiros[i].pos.y += 20;
+                    break;
+                case KEY_LEFT:
+                    if(mapa[(int)posMatriz.x - 2][(int)posMatriz.y] == CHAR_PAREDE)
+                        player->tiros[i].valido = 0;
+                    else
+                        player->tiros[i].pos.x -= 20;
+                    break;
+                case KEY_RIGHT:
+                    if(mapa[(int)posMatriz.x + 2][(int)posMatriz.y] == CHAR_PAREDE)
+                        player->tiros[i].valido = 0;
+                    else
+                        player->tiros[i].pos.x += 20;
+                    break;
+                }
+            }
+        }
+    }
+    if(player->num_tiros == MAX_TIROS){
+        player->num_tiros = 0;
     }
 }
 
@@ -345,13 +404,13 @@ void desenha_mapa(char mapa[MAP_ROWS][MAP_COLS])
             {
                 x=j*(SCREEN_WIDTH/MAP_COLS);
                 y=i*((SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS);
-                DrawRectangle(x,y,(SCREEN_WIDTH/MAP_COLS),(SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS,BLACK); //drawrectangle(x,y,width,height,color)
+                DrawRectangle(x,y,(SCREEN_WIDTH/MAP_COLS),(SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS,DARKBROWN  ); //drawrectangle(x,y,width,height,color)
             }
-            else if(mapa[i][j]==CHAR_ESPACO_LIVRE)
+            else if(mapa[i][j]==CHAR_ESPACO_LIVRE || mapa[i][j]==CHAR_INIMIGO ||  mapa[i][j]==CHAR_JOGADOR)
             {
                 x=j*(SCREEN_WIDTH/MAP_COLS);
                 y=i*((SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS);
-                DrawRectangleLines(x,y,SCREEN_WIDTH/MAP_COLS,(SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS,RED);
+                DrawRectangle(x,y,SCREEN_WIDTH/MAP_COLS,(SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS,BEIGE);
             }
         }
     }
@@ -367,6 +426,7 @@ void init_player(JOGADOR *player)
     {
         0,0,player->player_texture.width,player->player_texture.height
     };
+    player->num_tiros = 0;
 }
 
 void desenha_jogador(JOGADOR *player)
@@ -380,14 +440,17 @@ void desenha_jogador(JOGADOR *player)
 
 void movimenta_jogador(char map[MAP_ROWS][MAP_COLS],JOGADOR* player)
 {
-    if(IsKeyDown(KEY_A))
+
+    if(IsKeyDown(KEY_A) )
     {
         if(funcao_movimento(map,player->pos_matriz_player,(char)'a'))
         {
+
             map[(int)player->pos_matriz_player.x][(int)player->pos_matriz_player.y] = CHAR_ESPACO_LIVRE;
             player->pos_matriz_player.y -= 1;
             map[(int)player->pos_matriz_player.x][(int)player->pos_matriz_player.y] = CHAR_JOGADOR;
         }
+
     }
     if(IsKeyDown(KEY_D))
     {
@@ -416,6 +479,38 @@ void movimenta_jogador(char map[MAP_ROWS][MAP_COLS],JOGADOR* player)
             map[(int)player->pos_matriz_player.x][(int)player->pos_matriz_player.y] = CHAR_JOGADOR;
         }
     }
+    if(IsKeyPressed(KEY_UP)){
+        player->tiros[player->num_tiros].pos.x = player->pos_tela_player.x;
+        player->tiros[player->num_tiros].pos.y = player->pos_tela_player.y;
+        player->tiros[player->num_tiros].dano = 1;
+        player->tiros[player->num_tiros].direcao = KEY_UP;
+        player->tiros[player->num_tiros].valido = 1;
+        player->num_tiros++;
+    }
+    if(IsKeyPressed(KEY_DOWN)){
+        player->tiros[player->num_tiros].pos.x = player->pos_tela_player.x;
+        player->tiros[player->num_tiros].pos.y = player->pos_tela_player.y;
+        player->tiros[player->num_tiros].dano = 1;
+        player->tiros[player->num_tiros].direcao = KEY_DOWN;
+        player->tiros[player->num_tiros].valido = 1;
+        player->num_tiros++;
+    }
+    if(IsKeyPressed(KEY_LEFT)){
+        player->tiros[player->num_tiros].pos.x = player->pos_tela_player.x;
+        player->tiros[player->num_tiros].pos.y = player->pos_tela_player.y;
+        player->tiros[player->num_tiros].dano = 1;
+        player->tiros[player->num_tiros].direcao = KEY_LEFT;
+        player->tiros[player->num_tiros].valido = 1;
+        player->num_tiros++;
+    }
+    if(IsKeyPressed(KEY_RIGHT)){
+        player->tiros[player->num_tiros].pos.x = player->pos_tela_player.x;
+        player->tiros[player->num_tiros].pos.y = player->pos_tela_player.y;
+        player->tiros[player->num_tiros].dano = 1;
+        player->tiros[player->num_tiros].direcao = KEY_RIGHT;
+        player->tiros[player->num_tiros].valido = 1;
+        player->num_tiros++;
+    }
 }
 
 int num_inimigos_vivos(INIMIGO inimigos[MAX_ENEMIES])
@@ -435,7 +530,7 @@ int main(void)
 {
     // Inicializações da Raylib
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "The Binding of Isaac");
-    SetTargetFPS(60); // Set the desired frame rate
+    SetTargetFPS(40); // Set the desired frame rate
 
     // Variáveis e outras inicalizações
     int contador_fase=1;
@@ -460,6 +555,7 @@ int main(void)
     // printf("%c\n",map[(int)inimigos[0].pos_matriz.x][(int)inimigos[0].pos_matriz.y]);
 
 
+    int flag=0;
 
     // Main game loop
     while (!WindowShouldClose())
@@ -468,8 +564,10 @@ int main(void)
         // Update
         movimenta_jogador(map, &player);
         movimenta_inimigos(map, inimigos);
+
         // printf("%d",funcao_movimento(map,inimigos[0].pos_matriz,'w'));
         // system("cls");
+
 
         movimenta_inimigo_debug(&inimigos[0],map);
 
@@ -479,9 +577,9 @@ int main(void)
 
         ClearBackground(SKYBLUE);
         desenha_mapa(map);
+        desenha_tiro(&player, map);
         desenha_jogador(&player);
         desenha_inimigos(inimigos);
-
 
         // Impressao dos textos
         calcula_tempo(init, &segundos, &minutos);
@@ -494,8 +592,8 @@ int main(void)
         DrawText(TextFormat("Inimigos: %02d", num_inimigos), SCREEN_WIDTH-200, SCREEN_HEIGHT - 45, 35, BLACK);
 
         //debug
-        Vector2 teste1=calcula_posTela((int)inimigos[0].pos_matriz.x-1,(int)inimigos[0].pos_matriz.y);
-        DrawRectangle(teste1.x,teste1.y,SCREEN_WIDTH/MAP_COLS,(SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS,GREEN);
+        // Vector2 teste1=calcula_posTela((int)inimigos[0].pos_matriz.x-1,(int)inimigos[0].pos_matriz.y);
+        // DrawRectangle(teste1.x,teste1.y,SCREEN_WIDTH/MAP_COLS,(SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS,GREEN);
         EndDrawing();
     }
 

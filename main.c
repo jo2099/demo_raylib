@@ -16,8 +16,6 @@
 #define BORDA_HUD 130
 #define MAX_TIROS 50
 
-
-
 // Váriaveis globais
 int num_inimigos = 0;
 
@@ -31,7 +29,6 @@ typedef struct shoot{
     int direcao;
     int valido;
 } TIRO;
-
 
 typedef struct player
 {
@@ -310,6 +307,7 @@ Vector2 calcula_posTela(int pos_x_matriz,int pos_y_matriz) //recebe dois inteiro
     pos_tela.y=pos_x_matriz*((SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS);
     return pos_tela;
 }
+
 Vector2 calcula_posMatriz(Vector2 pos_tela)
 {
     Vector2 pos_matriz;
@@ -331,35 +329,44 @@ void desenha_inimigos(INIMIGO inimigos[MAX_ENEMIES])
     }
 }
 
-void desenha_tiro(JOGADOR *player,char mapa[MAP_ROWS][MAP_COLS]){
+void desenha_tiro(JOGADOR *player,char mapa[MAP_ROWS][MAP_COLS], INIMIGO inimigos[]){
     if(player->num_tiros > 0){
-        Vector2 size = {20, 20};
+        //Vector2 size = {20, 20};
         for(int i = 0; i < player->num_tiros; i++){
             if(player->tiros[i].valido == 1){
-                DrawRectangleV(player->tiros[i].pos, size, BLUE);
+                Rectangle rec_tiro = {player->tiros[i].pos.x, player->tiros[i].pos.y, 20, 20};
+
+                DrawRectangleRec(rec_tiro, BLUE);
                 Vector2 posMatriz = calcula_posMatriz(player->tiros[i].pos);
+
+                for(int j = 0; j < num_inimigos; j++){
+                    Rectangle rec_inimigo = {inimigos[i].pos_tela.x, inimigos[i].pos_tela.y, 60, 60};
+                    if(CheckCollisionRecs(rec_tiro, rec_inimigo)){
+                        inimigos[i].vivo = 0;
+                    }
+                }
 
                 switch (player->tiros[i].direcao){
                 case KEY_UP:
-                    if(mapa[(int)posMatriz.x][(int)posMatriz.y - 2] == CHAR_PAREDE)
+                    if(mapa[(int)posMatriz.x][(int)posMatriz.y - 1] == CHAR_PAREDE)
                         player->tiros[i].valido = 0;
                     else
                         player->tiros[i].pos.y -= 20;
                     break;
                 case KEY_DOWN:
-                    if(mapa[(int)posMatriz.x][(int)posMatriz.y + 2] == CHAR_PAREDE)
+                    if(mapa[(int)posMatriz.x][(int)posMatriz.y + 1] == CHAR_PAREDE)
                         player->tiros[i].valido = 0;
                     else
                         player->tiros[i].pos.y += 20;
                     break;
                 case KEY_LEFT:
-                    if(mapa[(int)posMatriz.x - 2][(int)posMatriz.y] == CHAR_PAREDE)
+                    if(mapa[(int)posMatriz.x - 1][(int)posMatriz.y] == CHAR_PAREDE)
                         player->tiros[i].valido = 0;
                     else
                         player->tiros[i].pos.x -= 20;
                     break;
                 case KEY_RIGHT:
-                    if(mapa[(int)posMatriz.x + 2][(int)posMatriz.y] == CHAR_PAREDE)
+                    if(mapa[(int)posMatriz.x + 1][(int)posMatriz.y] == CHAR_PAREDE)
                         player->tiros[i].valido = 0;
                     else
                         player->tiros[i].pos.x += 20;
@@ -480,32 +487,32 @@ void movimenta_jogador(char map[MAP_ROWS][MAP_COLS],JOGADOR* player)
         }
     }
     if(IsKeyPressed(KEY_UP)){
-        player->tiros[player->num_tiros].pos.x = player->pos_tela_player.x;
-        player->tiros[player->num_tiros].pos.y = player->pos_tela_player.y;
+        player->tiros[player->num_tiros].pos.x = player->pos_tela_player.x + 20;
+        player->tiros[player->num_tiros].pos.y = player->pos_tela_player.y + 10;
         player->tiros[player->num_tiros].dano = 1;
         player->tiros[player->num_tiros].direcao = KEY_UP;
         player->tiros[player->num_tiros].valido = 1;
         player->num_tiros++;
     }
     if(IsKeyPressed(KEY_DOWN)){
-        player->tiros[player->num_tiros].pos.x = player->pos_tela_player.x;
-        player->tiros[player->num_tiros].pos.y = player->pos_tela_player.y;
+        player->tiros[player->num_tiros].pos.x = player->pos_tela_player.x + 20;
+        player->tiros[player->num_tiros].pos.y = player->pos_tela_player.y + 10;
         player->tiros[player->num_tiros].dano = 1;
         player->tiros[player->num_tiros].direcao = KEY_DOWN;
         player->tiros[player->num_tiros].valido = 1;
         player->num_tiros++;
     }
     if(IsKeyPressed(KEY_LEFT)){
-        player->tiros[player->num_tiros].pos.x = player->pos_tela_player.x;
-        player->tiros[player->num_tiros].pos.y = player->pos_tela_player.y;
+        player->tiros[player->num_tiros].pos.x = player->pos_tela_player.x + 20;
+        player->tiros[player->num_tiros].pos.y = player->pos_tela_player.y + 10;
         player->tiros[player->num_tiros].dano = 1;
         player->tiros[player->num_tiros].direcao = KEY_LEFT;
         player->tiros[player->num_tiros].valido = 1;
         player->num_tiros++;
     }
     if(IsKeyPressed(KEY_RIGHT)){
-        player->tiros[player->num_tiros].pos.x = player->pos_tela_player.x;
-        player->tiros[player->num_tiros].pos.y = player->pos_tela_player.y;
+        player->tiros[player->num_tiros].pos.x = player->pos_tela_player.x + 20;
+        player->tiros[player->num_tiros].pos.y = player->pos_tela_player.y + 10;
         player->tiros[player->num_tiros].dano = 1;
         player->tiros[player->num_tiros].direcao = KEY_RIGHT;
         player->tiros[player->num_tiros].valido = 1;
@@ -577,9 +584,10 @@ int main(void)
 
         ClearBackground(SKYBLUE);
         desenha_mapa(map);
-        desenha_tiro(&player, map);
+        desenha_tiro(&player, map, inimigos);
         desenha_jogador(&player);
         desenha_inimigos(inimigos);
+        num_inimigos = num_inimigos_vivos(inimigos);
 
         // Impressao dos textos
         calcula_tempo(init, &segundos, &minutos);

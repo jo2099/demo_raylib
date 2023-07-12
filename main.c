@@ -73,34 +73,7 @@ void init_enemies(INIMIGO enemies[MAX_ENEMIES])//inicializa os inimigos
     }
 }
 
-void movimenta_inimigo_debug(INIMIGO enemy,char mapa[MAP_ROWS][MAP_COLS])
-{
-    if(IsKeyDown(KEY_UP) && funcao_movimento(mapa,enemy.pos_matriz,'w'))
-    {
-        mapa[(int)enemy.pos_matriz.x][(int)enemy.pos_matriz.y]=CHAR_ESPACO_LIVRE;
-        enemy.pos_matriz.x-=1;
-        mapa[(int)enemy.pos_matriz.x][(int)enemy.pos_matriz.y]=CHAR_INIMIGO;
-        
-    }
-    if(IsKeyDown(KEY_DOWN) && funcao_movimento(mapa,enemy.pos_matriz,'s'))
-    {
-        mapa[(int)enemy.pos_matriz.x][(int)enemy.pos_matriz.y]=CHAR_ESPACO_LIVRE;
-        enemy.pos_matriz.x+=1;
-        mapa[(int)enemy.pos_matriz.x][(int)enemy.pos_matriz.y]=CHAR_INIMIGO;
-    }
-    if(IsKeyDown(KEY_LEFT) && funcao_movimento(mapa,enemy.pos_matriz,'a'))
-    {
-        mapa[(int)enemy.pos_matriz.x][(int)enemy.pos_matriz.y]=CHAR_ESPACO_LIVRE;
-        enemy.pos_matriz.y-=1;
-        mapa[(int)enemy.pos_matriz.x][(int)enemy.pos_matriz.y]=CHAR_INIMIGO;
-    }
-    if(IsKeyDown(KEY_RIGHT) && funcao_movimento(mapa,enemy.pos_matriz,'d'))
-    {
-        mapa[(int)enemy.pos_matriz.x][(int)enemy.pos_matriz.y]=CHAR_ESPACO_LIVRE;
-        enemy.pos_matriz.y+=1;
-        mapa[(int)enemy.pos_matriz.x][(int)enemy.pos_matriz.y]=CHAR_INIMIGO;
-    }
-}
+
 
 int funcao_movimento(char mapa[MAP_ROWS][MAP_COLS],Vector2 pos_matriz,char tecla)
 {
@@ -111,9 +84,9 @@ int funcao_movimento(char mapa[MAP_ROWS][MAP_COLS],Vector2 pos_matriz,char tecla
     switch(tecla)
     {
     case 'w':
-        entidade_livre_jogador= (mapa[posx+3][posy-2] !=CHAR_JOGADOR &&mapa[posx+3][posy-1] !=CHAR_JOGADOR &&mapa[posx+3][posy] !=CHAR_JOGADOR &&mapa[posx+3][posy+1] !=CHAR_JOGADOR &&mapa[posx+3][posy+2] !=CHAR_JOGADOR);
+        entidade_livre_jogador= (mapa[posx-3][posy+2] !=CHAR_JOGADOR &&mapa[posx-3][posy+1] !=CHAR_JOGADOR &&mapa[posx-3][posy] !=CHAR_JOGADOR &&mapa[posx-3][posy-1] !=CHAR_JOGADOR &&mapa[posx-3][posy-2] !=CHAR_JOGADOR);
 
-        entidade_livre_inimigo=(mapa[posx-3][posy+2] !=CHAR_INIMIGO &&mapa[posx-3][posy+1] !=CHAR_INIMIGO &&mapa[posx-3][posy] !=CHAR_INIMIGO &&mapa[posx-3][posy-1] !=CHAR_INIMIGO &&mapa[posx-3][posy-2] !=CHAR_INIMIGO);
+        entidade_livre_inimigo=(mapa[posx-3][posy+2] !=CHAR_INIMIGO &&mapa[posx-3][posy+1] !=CHAR_INIMIGO &&mapa[posx-3][posy] !=CHAR_INIMIGO &&mapa[posx-3][posy-1] !=CHAR_INIMIGO &&mapa[posx-3][posy-2] !=CHAR_INIMIGO );
 
         if(mapa[posx-1][posy]==CHAR_ESPACO_LIVRE && mapa[posx-1][posy+1] == CHAR_ESPACO_LIVRE && mapa[posx-1][posy+2] == CHAR_ESPACO_LIVRE && entidade_livre_jogador &&entidade_livre_inimigo)
         {
@@ -125,7 +98,14 @@ int funcao_movimento(char mapa[MAP_ROWS][MAP_COLS],Vector2 pos_matriz,char tecla
         }
         break;
     case 's':
-        if(mapa[posx+3][posy]==CHAR_ESPACO_LIVRE && mapa[posx+3][posy+1] == CHAR_ESPACO_LIVRE && mapa[posx+3][posy+2] == CHAR_ESPACO_LIVRE && mapa[posx+3][posy-1] !=CHAR_JOGADOR &&mapa[posx+2][posy-2] != CHAR_JOGADOR)
+        entidade_livre_jogador=(mapa[posx+3][posy]!=CHAR_JOGADOR &&mapa[posx+3][posy+1] !=CHAR_JOGADOR &&mapa[posx+3][posy+2] !=CHAR_JOGADOR &&mapa[posx+3][posy-1] !=CHAR_JOGADOR &&mapa[posx+3][posy-2] !=CHAR_JOGADOR);
+
+
+        entidade_livre_inimigo=(mapa[posx+3][posy]!=CHAR_INIMIGO &&mapa[posx+3][posy+1] !=CHAR_INIMIGO &&mapa[posx+3][posy+2] !=CHAR_INIMIGO &&mapa[posx+3][posy-1] !=CHAR_INIMIGO &&mapa[posx+3][posy-2] !=CHAR_INIMIGO);
+
+
+
+        if(mapa[posx+3][posy]==CHAR_ESPACO_LIVRE && mapa[posx+3][posy+1] == CHAR_ESPACO_LIVRE && mapa[posx+3][posy+2] == CHAR_ESPACO_LIVRE && entidade_livre_inimigo && entidade_livre_jogador)
         {
             return 1;
         }
@@ -135,7 +115,12 @@ int funcao_movimento(char mapa[MAP_ROWS][MAP_COLS],Vector2 pos_matriz,char tecla
         }
         break;
     case 'a':
-        if(mapa[posx][posy-1]==CHAR_ESPACO_LIVRE && mapa[posx+1][posy-1] == CHAR_ESPACO_LIVRE && mapa[posx+2][posy-1] == CHAR_ESPACO_LIVRE && mapa[posx][posy-3] != CHAR_JOGADOR && mapa[posx+1][posy-3] != CHAR_JOGADOR && mapa[posx+2][posy-3] != CHAR_JOGADOR)
+        entidade_livre_jogador=(mapa[posx][posy-3]!=CHAR_JOGADOR &&mapa[posx+1][posy-3] !=CHAR_JOGADOR &&mapa[posx+2][posy-3] !=CHAR_JOGADOR &&mapa[posx-1][posy-3] !=CHAR_JOGADOR &&mapa[posx-2][posy-3] !=CHAR_JOGADOR);
+
+        entidade_livre_inimigo=(mapa[posx][posy-3]!=CHAR_INIMIGO &&mapa[posx+1][posy-3] !=CHAR_INIMIGO &&mapa[posx+2][posy-3] !=CHAR_INIMIGO &&mapa[posx-1][posy-3] !=CHAR_INIMIGO &&mapa[posx-2][posy-3] !=CHAR_INIMIGO);
+
+
+        if(mapa[posx][posy-1]==CHAR_ESPACO_LIVRE && mapa[posx+1][posy-1] == CHAR_ESPACO_LIVRE && mapa[posx+2][posy-1] == CHAR_ESPACO_LIVRE && entidade_livre_inimigo && entidade_livre_jogador)
         {
 
             return 1;
@@ -146,7 +131,11 @@ int funcao_movimento(char mapa[MAP_ROWS][MAP_COLS],Vector2 pos_matriz,char tecla
         }
         break;
     case 'd':
-        if(mapa[posx][posy+3]==CHAR_ESPACO_LIVRE && mapa[posx+1][posy+3] == CHAR_ESPACO_LIVRE && mapa[posx+2][posy+3] == CHAR_ESPACO_LIVRE && mapa[posx][posy+3] != CHAR_JOGADOR && mapa[posx+1][posy+3] != CHAR_JOGADOR && mapa[posx+2][posy+3] != CHAR_JOGADOR)
+        entidade_livre_jogador=(mapa[posx][posy+3]!=CHAR_JOGADOR &&mapa[posx+1][posy+3] !=CHAR_JOGADOR &&mapa[posx+2][posy+3] !=CHAR_JOGADOR &&mapa[posx-1][posy+3] !=CHAR_JOGADOR &&mapa[posx-2][posy+3] !=CHAR_JOGADOR);
+
+        entidade_livre_inimigo=(mapa[posx][posy+3]!=CHAR_INIMIGO &&mapa[posx+1][posy+3] !=CHAR_INIMIGO &&mapa[posx+2][posy+3] !=CHAR_INIMIGO &&mapa[posx-1][posy+3] !=CHAR_INIMIGO &&mapa[posx-2][posy+3] !=CHAR_INIMIGO);
+
+        if(mapa[posx][posy+3]==CHAR_ESPACO_LIVRE && mapa[posx+1][posy+3] == CHAR_ESPACO_LIVRE && mapa[posx+2][posy+3] == CHAR_ESPACO_LIVRE && entidade_livre_inimigo && entidade_livre_jogador)
         {
             return 1;
         }
@@ -158,6 +147,35 @@ int funcao_movimento(char mapa[MAP_ROWS][MAP_COLS],Vector2 pos_matriz,char tecla
     default:
         return 0;
         break;
+    }
+}
+
+void movimenta_inimigo_debug(INIMIGO* enemy,char mapa[MAP_ROWS][MAP_COLS])
+{
+    if(IsKeyDown(KEY_UP) && funcao_movimento(mapa,enemy->pos_matriz,'w'))
+    {
+        mapa[(int)enemy->pos_matriz.x][(int)enemy->pos_matriz.y]=CHAR_ESPACO_LIVRE;
+        enemy->pos_matriz.x-=1;
+        mapa[(int)enemy->pos_matriz.x][(int)enemy->pos_matriz.y]=CHAR_INIMIGO;
+
+    }
+    if(IsKeyDown(KEY_DOWN) && funcao_movimento(mapa,enemy->pos_matriz,'s'))
+    {
+        mapa[(int)enemy->pos_matriz.x][(int)enemy->pos_matriz.y]=CHAR_ESPACO_LIVRE;
+        enemy->pos_matriz.x+=1;
+        mapa[(int)enemy->pos_matriz.x][(int)enemy->pos_matriz.y]=CHAR_INIMIGO;
+    }
+    if(IsKeyDown(KEY_LEFT) && funcao_movimento(mapa,enemy->pos_matriz,'a'))
+    {
+        mapa[(int)enemy->pos_matriz.x][(int)enemy->pos_matriz.y]=CHAR_ESPACO_LIVRE;
+        enemy->pos_matriz.y-=1;
+        mapa[(int)enemy->pos_matriz.x][(int)enemy->pos_matriz.y]=CHAR_INIMIGO;
+    }
+    if(IsKeyDown(KEY_RIGHT) && funcao_movimento(mapa,enemy->pos_matriz,'d'))
+    {
+        mapa[(int)enemy->pos_matriz.x][(int)enemy->pos_matriz.y]=CHAR_ESPACO_LIVRE;
+        enemy->pos_matriz.y+=1;
+        mapa[(int)enemy->pos_matriz.x][(int)enemy->pos_matriz.y]=CHAR_INIMIGO;
     }
 }
 
@@ -449,7 +467,7 @@ int main(void)
 
         // Update
         movimenta_jogador(map, &player);
-        // movimenta_inimigos(map, inimigos);
+        movimenta_inimigos(map, inimigos);
         // printf("%d",funcao_movimento(map,inimigos[0].pos_matriz,'w'));
         // system("cls");
 

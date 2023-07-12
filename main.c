@@ -36,7 +36,8 @@ typedef struct player
 
     TIRO tiros[MAX_TIROS];
     int num_tiros;
-
+    Texture2D tear_texture;
+    Rectangle tear_source;
 
     Vector2 pos_matriz_player;
     Vector2 pos_tela_player;
@@ -47,12 +48,13 @@ typedef struct player
 
 typedef struct enemy
 {
+    int vidas;
+
     Vector2 pos_matriz;
     Vector2 pos_tela;
     Texture2D enemy_texture;
     Rectangle enemy_source;
     int can_fire;
-    int vivo;
 
 } INIMIGO;
 
@@ -76,9 +78,9 @@ void init_enemies(INIMIGO enemies[MAX_ENEMIES])//inicializa os inimigos
 
     for(int i=0; i<MAX_ENEMIES; i++)
     {
-        enemies[i].enemy_texture=LoadTexture("sprites/isaac.png");
+        enemies[i].enemy_texture=LoadTexture("sprites/gaper.png");
         enemies[i].enemy_source=(Rectangle){0,0,enemies[i].enemy_texture.width,enemies[i].enemy_texture.height};
-        enemies[i].vivo=0;
+        enemies[i].vidas=0;
         enemies[i].can_fire=0;
     }
 }
@@ -198,7 +200,7 @@ void movimenta_inimigos(char matriz[30][60], INIMIGO enemies[MAX_ENEMIES]) // mo
     {
         movimentox=rand()%3-1;
         movimentoy=rand()%3-1;
-        if(enemies[i].vivo)
+        if(enemies[i].vidas > 0)
         {
 
             switch(movimentox)
@@ -277,13 +279,13 @@ int importa_mapa(char fileName[], char matriz[MAP_ROWS][MAP_COLS], JOGADOR *joga
                         jogador->pos_matriz_player.y = j;
                         break;
                     case CHAR_INIMIGO: // Se for um inimigo, adiciona ele ao vetor de inimigos
-                        inimigos[num_inimigos].vivo = 1;
+                        inimigos[num_inimigos].vidas = 1;
                         inimigos[num_inimigos].can_fire=1;
                         inimigos[num_inimigos].pos_matriz.x = i;
                         inimigos[num_inimigos].pos_matriz.y = j;
                         num_inimigos++;
 
-                        // inimigos[num_inimigos_vivos(inimigos)].vivo=1;
+                        // inimigos[num_inimigos_vidas(inimigos)].vidas=1;
 
 
                         break;
@@ -320,7 +322,7 @@ void desenha_inimigos(INIMIGO inimigos[MAX_ENEMIES])
 {
     for(int i=0; i<MAX_ENEMIES; i++)
     {
-        if(inimigos[i].vivo)
+        if(inimigos[i].vidas > 0)
         {
             inimigos[i].pos_tela=calcula_posTela((int)inimigos[i].pos_matriz.x,(int)inimigos[i].pos_matriz.y);
             //DrawRectangle(inimigos[i].pos_tela.x,inimigos[i].pos_tela.y,SCREEN_WIDTH/MAP_COLS,(SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS,RED);
@@ -336,13 +338,13 @@ void desenha_tiro(JOGADOR *player,char mapa[MAP_ROWS][MAP_COLS], INIMIGO inimigo
             if(player->tiros[i].valido == 1){
                 Rectangle rec_tiro = {player->tiros[i].pos.x, player->tiros[i].pos.y, 20, 20};
 
-                DrawRectangleRec(rec_tiro, BLUE);
+                DrawTextureRec(player->tear_texture, player->tear_source, player->tiros[i].pos, WHITE);
                 Vector2 posMatriz = calcula_posMatriz(player->tiros[i].pos);
 
                 for(int j = 0; j < num_inimigos; j++){
                     Rectangle rec_inimigo = {inimigos[i].pos_tela.x, inimigos[i].pos_tela.y, 60, 60};
                     if(CheckCollisionRecs(rec_tiro, rec_inimigo)){
-                        inimigos[i].vivo = 0;
+                        inimigos[i].vidas = inimigos[i].vidas - (int)(player->tiros[i].dano);
                     }
                 }
 
@@ -384,7 +386,7 @@ void printa_inimigos(INIMIGO enemies[MAX_ENEMIES])//printa os inimigos na tela
 {
     for(int i=0; i<MAX_ENEMIES; i++)
     {
-        if(enemies[i].vivo)
+        if(enemies[i].vidas > 0)
         {
             printf("inimigo numero %d-> x: %d y: %d\n",i+1, (int)enemies[i].pos_matriz.x,(int) enemies[i].pos_matriz.y);
         }
@@ -433,15 +435,18 @@ void init_player(JOGADOR *player)
     {
         0,0,player->player_texture.width,player->player_texture.height
     };
+
     player->num_tiros = 0;
+    player->tear_texture = LoadTexture("sprites/tear.png");
+    player->tear_source=(Rectangle)
+    {
+        0,0,player->tear_texture.width,player->tear_texture.height
+    };
 }
 
 void desenha_jogador(JOGADOR *player)
 {
     player->pos_tela_player=calcula_posTela((int)player->pos_matriz_player.x,(int)player->pos_matriz_player.y);
-    // printf("x tela: %d y tela: %d\n",(int)player->pos_tela_player.x,(int)player->pos_tela_player.y);
-    // printf("x matriz: %d y matriz: %d\n",player->pos_x_matriz,player->pos_y_matriz);
-    // system("pause");
     DrawTextureRec(player->player_texture,player->player_source,player->pos_tela_player,WHITE);
 }
 
@@ -520,12 +525,12 @@ void movimenta_jogador(char map[MAP_ROWS][MAP_COLS],JOGADOR* player)
     }
 }
 
-int num_inimigos_vivos(INIMIGO inimigos[MAX_ENEMIES])
+int num_inimigos_vidass(INIMIGO inimigos[MAX_ENEMIES])
 {
     int contador=0;
     for(int i=0; i<MAX_ENEMIES; i++)
     {
-        if(inimigos[i].vivo)
+        if(inimigos[i].vidas > 0)
         {
             contador++;
         }
@@ -551,17 +556,6 @@ int main(void)
     init_enemies(inimigos);
     init_player(&player);
     importa_mapa(nome_arquivo, map, &player, inimigos);
-
-    // printa_inimigos(inimigos);
-    // print_matriz(map,MAP_ROWS);
-
-    // printf("%d",num_inimigos_vivos(inimigos));
-    // printf("%d %d\n",(int)inimigos[0].pos_matriz.x,(int)inimigos[0].pos_matriz.y);
-    // printf("%d %d\n",(int)inimigos[1].pos_matriz.x,(int)inimigos[1].pos_matriz.y);
-    // printf("%d\n",inimigos[0].vivo);
-    // printf("%c\n",map[(int)inimigos[0].pos_matriz.x][(int)inimigos[0].pos_matriz.y]);
-
-
     int flag=0;
 
     // Main game loop
@@ -587,8 +581,7 @@ int main(void)
         desenha_tiro(&player, map, inimigos);
         desenha_jogador(&player);
         desenha_inimigos(inimigos);
-        num_inimigos = num_inimigos_vivos(inimigos);
-
+        num_inimigos = num_inimigos_vidass(inimigos);
         // Impressao dos textos
         calcula_tempo(init, &segundos, &minutos);
         DrawText(TextFormat("Timer: %02dmin e %02ds", minutos, segundos), 10, SCREEN_HEIGHT-140, 35,BLACK);

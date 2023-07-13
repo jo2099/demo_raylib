@@ -336,7 +336,7 @@ void desenha_tiro(JOGADOR *player,char mapa[MAP_ROWS][MAP_COLS], INIMIGO inimigo
         //Vector2 size = {20, 20};
         for(int i = 0; i < player->num_tiros; i++){
             if(player->tiros[i].valido == 1){
-                Rectangle rec_tiro = {player->tiros[i].pos.x, player->tiros[i].pos.y, 20, 20};
+                Rectangle rec_tiro = {player->tiros[i].pos.x, player->tiros[i].pos.y, 15, 15};
 
                 DrawTextureRec(player->tear_texture, player->tear_source, player->tiros[i].pos, WHITE);
                 Vector2 posMatriz = calcula_posMatriz(player->tiros[i].pos);
@@ -350,25 +350,25 @@ void desenha_tiro(JOGADOR *player,char mapa[MAP_ROWS][MAP_COLS], INIMIGO inimigo
 
                 switch (player->tiros[i].direcao){
                 case KEY_UP:
-                    if(mapa[(int)posMatriz.x][(int)posMatriz.y - 1] == CHAR_PAREDE)
+                    if(mapa[(int)posMatriz.x-1][(int)posMatriz.y] == CHAR_PAREDE)
                         player->tiros[i].valido = 0;
                     else
                         player->tiros[i].pos.y -= 20;
                     break;
                 case KEY_DOWN:
-                    if(mapa[(int)posMatriz.x][(int)posMatriz.y + 1] == CHAR_PAREDE)
+                    if(mapa[(int)posMatriz.x+1][(int)posMatriz.y] == CHAR_PAREDE)
                         player->tiros[i].valido = 0;
                     else
                         player->tiros[i].pos.y += 20;
                     break;
                 case KEY_LEFT:
-                    if(mapa[(int)posMatriz.x - 1][(int)posMatriz.y] == CHAR_PAREDE)
+                    if(mapa[(int)posMatriz.x ][(int)posMatriz.y-1] == CHAR_PAREDE)
                         player->tiros[i].valido = 0;
                     else
                         player->tiros[i].pos.x -= 20;
                     break;
                 case KEY_RIGHT:
-                    if(mapa[(int)posMatriz.x + 1][(int)posMatriz.y] == CHAR_PAREDE)
+                    if(mapa[(int)posMatriz.x][(int)posMatriz.y+1] == CHAR_PAREDE)
                         player->tiros[i].valido = 0;
                     else
                         player->tiros[i].pos.x += 20;
@@ -440,7 +440,7 @@ void init_player(JOGADOR *player)
     player->tear_texture = LoadTexture("sprites/tear.png");
     player->tear_source=(Rectangle)
     {
-        0,0,player->tear_texture.width,player->tear_texture.height
+        0,0,player->tear_texture.width,player->tear_texture.height-1
     };
 }
 
@@ -570,7 +570,7 @@ int main(void)
         // system("cls");
 
 
-        movimenta_inimigo_debug(&inimigos[0],map);
+        //movimenta_inimigo_debug(&inimigos[0],map);
 
 
         // Draw

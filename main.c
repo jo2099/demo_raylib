@@ -11,13 +11,18 @@
 #define MAX_ENEMIES 10
 #define CHAR_ESPACO_LIVRE ' '
 #define CHAR_PAREDE '#'
-#define CHAR_JOGADOR 'P'
+#define CHAR_JOGADOR 'J'
+#define CHAR_PORTAL 'P'
+#define CHAR_BOMBA 'B'
 #define CHAR_INIMIGO 'I'
+#define CHAR_FOGUEIRA 'X'
 #define BORDA_HUD 130
 #define MAX_TIROS 50
 
 // Váriaveis globais
 int num_inimigos = 0;
+int num_fase = 1;
+char nome_arquivo[17] = "mapas/mapa01.txt";
 
 // Calculate the starting position for the map to be centered
 int mapStartX = (SCREEN_WIDTH - (SCREEN_WIDTH / MAP_COLS * MAP_COLS)) / 2;
@@ -33,6 +38,7 @@ typedef struct shoot{
 typedef struct player
 {
     int vidas;
+    int bombas;
 
     TIRO tiros[MAX_TIROS];
     int num_tiros;
@@ -132,11 +138,11 @@ int funcao_movimento(char mapa[MAP_ROWS][MAP_COLS],Vector2 pos_matriz,char tecla
 
         if(mapa[posx][posy-1]==CHAR_ESPACO_LIVRE && mapa[posx+1][posy-1] == CHAR_ESPACO_LIVRE && mapa[posx+2][posy-1] == CHAR_ESPACO_LIVRE && entidade_livre_inimigo && entidade_livre_jogador)
         {
-
             return 1;
         }
         else
         {
+
             return 0;
         }
         break;
@@ -145,7 +151,7 @@ int funcao_movimento(char mapa[MAP_ROWS][MAP_COLS],Vector2 pos_matriz,char tecla
 
         entidade_livre_inimigo=(mapa[posx][posy+3]!=CHAR_INIMIGO &&mapa[posx+1][posy+3] !=CHAR_INIMIGO &&mapa[posx+2][posy+3] !=CHAR_INIMIGO &&mapa[posx-1][posy+3] !=CHAR_INIMIGO &&mapa[posx-2][posy+3] !=CHAR_INIMIGO);
 
-        if(mapa[posx][posy+3]==CHAR_ESPACO_LIVRE && mapa[posx+1][posy+3] == CHAR_ESPACO_LIVRE && mapa[posx+2][posy+3] == CHAR_ESPACO_LIVRE && entidade_livre_inimigo && entidade_livre_jogador)
+        if((mapa[posx][posy+3]==CHAR_ESPACO_LIVRE || mapa[posx][posy+3]==CHAR_PORTAL) && (mapa[posx+1][posy+3] == CHAR_ESPACO_LIVRE||mapa[posx+1][posy+3] == CHAR_PORTAL) && (mapa[posx+2][posy+3] == CHAR_ESPACO_LIVRE||mapa[posx+2][posy+3] == CHAR_PORTAL) && entidade_livre_inimigo && entidade_livre_jogador)
         {
             return 1;
         }
@@ -327,6 +333,7 @@ void desenha_inimigos(INIMIGO inimigos[MAX_ENEMIES])
             inimigos[i].pos_tela=calcula_posTela((int)inimigos[i].pos_matriz.x,(int)inimigos[i].pos_matriz.y);
             //DrawRectangle(inimigos[i].pos_tela.x,inimigos[i].pos_tela.y,SCREEN_WIDTH/MAP_COLS,(SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS,RED);
             DrawTextureRec(inimigos[i].enemy_texture,inimigos[i].enemy_source, inimigos[i].pos_tela, WHITE);
+            // DrawRectangleLines(inimigos[i].pos_tela.x,inimigos[i].pos_tela.y,SCREEN_WIDTH/MAP_COLS,(SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS,GREEN);
         }
     }
 }
@@ -344,6 +351,9 @@ void desenha_tiro(JOGADOR *player,char mapa[MAP_ROWS][MAP_COLS], INIMIGO inimigo
                 for(int j = 0; j < num_inimigos; j++){
                     Rectangle rec_inimigo = {inimigos[i].pos_tela.x, inimigos[i].pos_tela.y, 60, 60};
                     if(CheckCollisionRecs(rec_tiro, rec_inimigo)){
+                        system("cls");
+                        printf("colisao\n");
+                        printf("%d\n",num_inimigos);
                         inimigos[i].vidas = inimigos[i].vidas - (int)(player->tiros[i].dano);
                     }
                 }
@@ -409,17 +419,39 @@ void desenha_mapa(char mapa[MAP_ROWS][MAP_COLS])
     {
         for(int j=0; j<MAP_COLS; j++)
         {
-            if(mapa[i][j]==CHAR_PAREDE)
+            x=j*(SCREEN_WIDTH/MAP_COLS);
+            y=i*((SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS);
+            switch (mapa[i][j])
             {
-                x=j*(SCREEN_WIDTH/MAP_COLS);
-                y=i*((SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS);
-                DrawRectangle(x,y,(SCREEN_WIDTH/MAP_COLS),(SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS,DARKBROWN  ); //drawrectangle(x,y,width,height,color)
-            }
-            else if(mapa[i][j]==CHAR_ESPACO_LIVRE || mapa[i][j]==CHAR_INIMIGO ||  mapa[i][j]==CHAR_JOGADOR)
-            {
-                x=j*(SCREEN_WIDTH/MAP_COLS);
-                y=i*((SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS);
-                DrawRectangle(x,y,SCREEN_WIDTH/MAP_COLS,(SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS,BEIGE);
+                case CHAR_PAREDE:
+                    DrawRectangle(x,y,(SCREEN_WIDTH/MAP_COLS),(SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS,DARKBROWN  ); //drawrectangle(x,y,width,height,color)
+                    break;
+
+                case CHAR_ESPACO_LIVRE:
+                case CHAR_INIMIGO:
+                case CHAR_JOGADOR:
+                    DrawRectangle(x,y,SCREEN_WIDTH/MAP_COLS,(SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS,BEIGE);
+                    break;
+
+                case CHAR_PORTAL:
+                    if(num_inimigos == 0){
+                        DrawRectangle(x,y,SCREEN_WIDTH/MAP_COLS,(SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS,YELLOW);
+                    }
+                    else{
+                        DrawRectangle(x,y,(SCREEN_WIDTH/MAP_COLS),(SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS,DARKBROWN  );
+                    }
+                    break;
+
+                case CHAR_BOMBA:
+                    DrawRectangle(x,y,(SCREEN_WIDTH/MAP_COLS),(SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS,BLACK);
+                    break;
+
+                case CHAR_FOGUEIRA:
+                    DrawRectangle(x,y,(SCREEN_WIDTH/MAP_COLS),(SCREEN_HEIGHT-BORDA_HUD)/MAP_ROWS,RED);
+                    break;
+
+                default:
+                    break;
             }
         }
     }
@@ -429,6 +461,7 @@ void init_player(JOGADOR *player)
 {
     player->pos_matriz_player.x=0;
     player->vidas=3;
+    player->bombas=0;
     player->pos_matriz_player.y=0;
     player->player_texture=LoadTexture("sprites/isaac.png");
     player->player_source=(Rectangle)
@@ -450,7 +483,22 @@ void desenha_jogador(JOGADOR *player)
     DrawTextureRec(player->player_texture,player->player_source,player->pos_tela_player,WHITE);
 }
 
-void movimenta_jogador(char map[MAP_ROWS][MAP_COLS],JOGADOR* player)
+void atualiza_mapa(char map[MAP_ROWS][MAP_COLS], JOGADOR *player, INIMIGO inimigos[MAX_ENEMIES]){
+    char buffer [17] = "mapas/mapa";
+    char num[3];
+    
+    num_fase++;
+    printf("num_fase: %d\n", num_fase);
+    sprintf(num, "%02d", num_fase);
+    strcat(buffer, num);
+    strcat(buffer, ".txt");
+    strcpy(nome_arquivo, buffer);
+    printf("%s\n", nome_arquivo);
+    importa_mapa(nome_arquivo, map, player, inimigos);
+}
+
+
+void movimenta_jogador(char map[MAP_ROWS][MAP_COLS],JOGADOR* player, INIMIGO inimigos[MAX_ENEMIES])
 {
 
     if(IsKeyDown(KEY_A) )
@@ -461,7 +509,15 @@ void movimenta_jogador(char map[MAP_ROWS][MAP_COLS],JOGADOR* player)
             map[(int)player->pos_matriz_player.x][(int)player->pos_matriz_player.y] = CHAR_ESPACO_LIVRE;
             player->pos_matriz_player.y -= 1;
             map[(int)player->pos_matriz_player.x][(int)player->pos_matriz_player.y] = CHAR_JOGADOR;
+
+            if (map[(int)player->pos_matriz_player.x+1][(int)player->pos_matriz_player.y-1] == CHAR_FOGUEIRA)
+            {
+                printf("ouch\n");
+                player->vidas--;
+            }
         }
+
+
 
     }
     if(IsKeyDown(KEY_D))
@@ -471,6 +527,17 @@ void movimenta_jogador(char map[MAP_ROWS][MAP_COLS],JOGADOR* player)
             map[(int)player->pos_matriz_player.x][(int)player->pos_matriz_player.y] = CHAR_ESPACO_LIVRE;
             player->pos_matriz_player.y += 1;
             map[(int)player->pos_matriz_player.x][(int)player->pos_matriz_player.y] = CHAR_JOGADOR;
+            if(map[(int)player->pos_matriz_player.x][(int)player->pos_matriz_player.y+3]==CHAR_PORTAL && num_inimigos == 0)
+            {
+                atualiza_mapa(map, player, inimigos);
+                printf("passsou!!!\n");
+            }
+
+            if (map[(int)player->pos_matriz_player.x+1][(int)player->pos_matriz_player.y+3] == CHAR_FOGUEIRA)
+            {
+                printf("ouch\n");
+                player->vidas--;
+            }
         }
     }
     if(IsKeyDown(KEY_W))
@@ -480,17 +547,29 @@ void movimenta_jogador(char map[MAP_ROWS][MAP_COLS],JOGADOR* player)
             map[(int)player->pos_matriz_player.x][(int)player->pos_matriz_player.y] = CHAR_ESPACO_LIVRE;
             player->pos_matriz_player.x -= 1;
             map[(int)player->pos_matriz_player.x][(int)player->pos_matriz_player.y] = CHAR_JOGADOR;
+
+            if (map[(int)player->pos_matriz_player.x-1][(int)player->pos_matriz_player.y+1] == CHAR_FOGUEIRA)
+            {
+                printf("ouch\n");
+                player->vidas--;
+            }
         }
     }
     if(IsKeyDown(KEY_S))
     {
-        if(funcao_movimento(map, player->pos_matriz_player, 's'))
+        if (funcao_movimento(map, player->pos_matriz_player, 's'))
         {
             map[(int)player->pos_matriz_player.x][(int)player->pos_matriz_player.y] = CHAR_ESPACO_LIVRE;
             player->pos_matriz_player.x += 1;
             map[(int)player->pos_matriz_player.x][(int)player->pos_matriz_player.y] = CHAR_JOGADOR;
+            if (map[(int)player->pos_matriz_player.x+3][(int)player->pos_matriz_player.y+1] == CHAR_FOGUEIRA)
+            {
+                printf("ouch\n");
+                player->vidas--;
+            }
         }
     }
+
     if(IsKeyPressed(KEY_UP)){
         player->tiros[player->num_tiros].pos.x = player->pos_tela_player.x + 20;
         player->tiros[player->num_tiros].pos.y = player->pos_tela_player.y + 10;
@@ -545,14 +624,12 @@ int main(void)
     SetTargetFPS(40); // Set the desired frame rate
 
     // Variáveis e outras inicalizações
-    int contador_fase=1;
     int minutos = 0, segundos = 0;
     clock_t init = clock();
 
     JOGADOR player;
     INIMIGO inimigos[MAX_ENEMIES];
     char map[MAP_ROWS][MAP_COLS];
-    char nome_arquivo[17] = "mapas/mapa01.txt";
     init_enemies(inimigos);
     init_player(&player);
     importa_mapa(nome_arquivo, map, &player, inimigos);
@@ -563,7 +640,7 @@ int main(void)
     {
 
         // Update
-        movimenta_jogador(map, &player);
+        movimenta_jogador(map, &player, inimigos);
         movimenta_inimigos(map, inimigos);
 
         // printf("%d",funcao_movimento(map,inimigos[0].pos_matriz,'w'));
@@ -589,7 +666,7 @@ int main(void)
         DrawText(TextFormat("Barra de especial"), SCREEN_WIDTH-750, SCREEN_HEIGHT - 120, 35, RED);
         Rectangle especial_rec= {SCREEN_WIDTH-750,SCREEN_HEIGHT-80,310,35};
         DrawRectangleLinesEx(especial_rec, 5,RED);
-        DrawText(TextFormat("Fase: %02d", contador_fase), SCREEN_WIDTH-150, SCREEN_HEIGHT-140, 35,BLACK);
+        DrawText(TextFormat("Fase: %02d", num_fase), SCREEN_WIDTH-150, SCREEN_HEIGHT-140, 35,BLACK);
         DrawText(TextFormat("Inimigos: %02d", num_inimigos), SCREEN_WIDTH-200, SCREEN_HEIGHT - 45, 35, BLACK);
 
         //debug
